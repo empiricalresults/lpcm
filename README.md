@@ -18,10 +18,10 @@ Running the Tests
 -----------------
 In `settings.py`, set your AWS credentials for `LPCM_DYNAMODB_ACCESS_KEY`
 and `LPCM_DYNAMODB_SECRET_ACCESS_KEY`.
-Then run:
-  manage.py test lpcm
+Then run: 
+`manage.py test lpcm`
 
 Adding lpcm to your own projects
 --------------------------------
-Simply copy the `lpcm` directory (inside project) and add the required fields to
-your setttings module. Remember to also add it to your INSTALLED_APPS.
+Simply copy the `lpcm` directory (inside `project`) and add the required fields to
+your setttings module. Remember to also add it to your `INSTALLED_APPS`.

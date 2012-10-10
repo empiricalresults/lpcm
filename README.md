@@ -18,10 +18,29 @@ Running the Tests
 -----------------
 In `settings.py`, set your AWS credentials for `LPCM_DYNAMODB_ACCESS_KEY`
 and `LPCM_DYNAMODB_SECRET_ACCESS_KEY`.
-Then run: 
+Then run:
 `manage.py test lpcm`
 
 Adding lpcm to your own projects
 --------------------------------
 Simply copy the `lpcm` directory (inside `project`) and add the required fields to
 your setttings module. Remember to also add it to your `INSTALLED_APPS`.
+
+
+License
+-------
+Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
+Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+For a copy of the GNU General Public License, please see:
+<http://www.gnu.org/licenses/>.

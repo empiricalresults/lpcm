@@ -1,9 +1,12 @@
+# Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
+# Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
+
 import boto
 from thread_local import lpcm_thread_local
 import config
 
 class DynamoDB(object):
-  
+
   @classmethod
   def get_connection(cls):
     "Returns a thread-local dynamodb-boto connection"

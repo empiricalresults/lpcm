@@ -1,3 +1,6 @@
+# Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
+# Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
+
 import unittest
 from django.core.cache import cache
 from base import LPCMTestCase
@@ -93,4 +96,3 @@ class TestLPCMSet(LPCMTestCase):
       self.assertEquals(regular_map["some_list"], set([5,6,7,8,9,10]))
     finally:
       regular_map.delete("some_list")
-  

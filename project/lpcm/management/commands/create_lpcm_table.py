@@ -1,3 +1,7 @@
+# Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
+# Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
+
+
 import logging
 from django.core.management.base import BaseCommand
 from ...dynamodb import DynamoDB

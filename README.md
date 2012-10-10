@@ -5,7 +5,8 @@ Large Persistent Cached Map: A dictionary-like Django interface for Memcached an
 
 Requirements
 ------------
-* Django 1.4
+* Python 2.7+
+* Django 1.4+
 * pylibmc
 * boto
 

@@ -68,7 +68,7 @@ class TestLPCM(LPCMTestCase):
     cache_only_map.delete("a")
     with self.assertRaises(KeyError):
       a = cache_only_map["a"]
-    # deleting non existant key should be fine
+    # deleting non existent key should be fine
     cache_only_map.delete("lala_i_don't_exist")
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
@@ -79,7 +79,7 @@ class TestLPCM(LPCMTestCase):
     regular_map.delete("a")
     with self.assertRaises(KeyError):
       a = regular_map["a"]
-    # deleting non existant key should be fine
+    # deleting non existent key should be fine
     regular_map.delete("lala_i_don't_exist")
 
   def test_unicode_cache_only(self):
@@ -119,14 +119,14 @@ class TestLPCM(LPCMTestCase):
     cache_only_map.decrement('a', 50.1)
     self.assertEquals(cache_only_map['a'], -10)
 
-  def test_increment_non_existant_cache_only(self):
+  def test_increment_non_existent_cache_only(self):
     cache_only_map = LPCM(name = "some_map", cache_only = True)
     cache_only_map.increment('new_key')
     self.assertEquals(cache_only_map['new_key'], 1)
     cache_only_map.increment('another_key', 10)
     self.assertEquals(cache_only_map['another_key'], 10)
 
-  def test_bad_incrementy_cache_only(self):
+  def test_bad_increment_cache_only(self):
     cache_only_map = LPCM(name = "some_map", cache_only = True)
     cache_only_map['a'] = 41
     with self.assertRaises(ValueError):
@@ -157,7 +157,7 @@ class TestLPCM(LPCMTestCase):
       regular_map.delete('another_key')
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
-  def test_bad_incrementy_regular(self):
+  def test_bad_increment_regular(self):
     regular_map = LPCM(name = "some_map", cache_only = False)
     try:
       with self.assertRaises(ValueError):

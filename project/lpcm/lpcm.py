@@ -14,7 +14,7 @@ import config
 
 
 class LargePersistentCachedMap(object):
-  """ A key:value diectionary  which is saved both in Memcached and AWS DynamoDB.
+  """ A key:value dictionary  which is saved both in Memcached and AWS DynamoDB.
     Create a map by simply calling the constructor with the map name.
     Supported value types are strings and numbers. Maximum value size is 60kb.
 

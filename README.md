@@ -3,6 +3,9 @@ lpcm
 
 Large Persistent Cached Map: A dictionary-like Django interface for Memcached and AWS DynamoDB
 
+A detailed discussion of the motivations and use cases for lpcm is provided here:
+http://www.empiricalresults.ca/blog/2012/10/16/lpcm:-large-persistent-cached-map.-a-dictionary-like-django-interface-for-memcached-and-dynamodb/
+
 Requirements
 ------------
 * Python 2.7+

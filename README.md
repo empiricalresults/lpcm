@@ -3,8 +3,43 @@ lpcm
 
 Large Persistent Cached Map: a dictionary-like Django interface for AWS DynamoDB and memcached 
 
-A detailed discussion of the motivations and use cases for lpcm is provided here:
-http://www.empiricalresults.ca/blog/2012/10/16/lpcm:-large-persistent-cached-map.-a-dictionary-like-django-interface-for-memcached-and-dynamodb/
+*lpcm* allows you to have a dictionary-like object in python that automatically interfaces
+[DynamoDB](http://aws.amazon.com/dynamodb/) and [memcached](http://memcached.org/):
+
+```python
+  some_dict = LPCM('some_dict')
+  some_dict['pi'] = 3.1415
+```
+
+This will save a key-value pair ``pi: 3.1415`` in both memcached and DynamoDB associated with
+the map name ``some_dict``. Similarly, you can access the stored values like a
+regular dictionary:
+
+```python
+  some_dict = LPCM('some_dict')
+  try:
+    v = some_dict['pi']
+  except KeyError:
+    print "The pi is a lie"
+```
+
+This will first look for the key ``pi`` associated with the map name ``some_dict``
+in memcached. If no associated value is found in
+memcached, a query is sent to DynamoDB. If DynamoDB returns a value, it will be cached in memcached and then returned, otherwise
+a ``KeyError`` exception is raised.
+
+Atomic increments are also supported:
+
+```python
+  user_count = LPCM('user_count')
+  user_count[request.user.id].increment()
+```
+
+In addition to the syntactic sugar, *lpcm* allows you insulate your production data
+from the data accessed by unittests and general development.  It also allows you to get
+faster and cheaper testing by switching to cached-only testing during development.
+
+A detailed discussion of the motivations and use cases for *lpcm* is provided [here](http://www.empiricalresults.ca/blog/2012/10/16/lpcm:-large-persistent-cached-map.-a-dictionary-like-django-interface-for-memcached-and-dynamodb/).
 
 Requirements
 ------------
@@ -26,6 +61,7 @@ and `LPCM_DYNAMODB_SECRET_ACCESS_KEY`.
 `manage.py create_lpcm_table`
 3. Run the tests:
 `manage.py test lpcm`
+
 Adding lpcm to your own projects
 --------------------------------
 Simply copy the `lpcm` directory (inside `project`) and add the required fields to

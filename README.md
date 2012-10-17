@@ -32,7 +32,7 @@ Atomic increments are also supported:
 
 ```python
   user_count = LPCM('user_count')
-  user_count[request.user.id].increment()
+  user_count.increment(request.user.id)
 ```
 
 In addition to the syntactic sugar, *lpcm* allows you insulate your production data

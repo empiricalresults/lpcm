@@ -4,8 +4,8 @@ INSTALLED_APPS = (
     'project.lpcm'
 )
 
-LPCM_DYNAMODB_ACCESS_KEY = "** Your DynamoDB Access Key **"
-LPCM_DYNAMODB_SECRET_ACCESS_KEY = "** Your DynamoDB Secret Access Key **"
+LPCM_DYNAMODB_ACCESS_KEY = None # "** Your DynamoDB Access Key **"
+LPCM_DYNAMODB_SECRET_ACCESS_KEY = None # "** Your DynamoDB Secret Access Key **"
 LPCM_DYNAMODB_PROVISIONED_READ_UNITS = 10
 LPCM_DYNAMODB_PROVISIONED_WRITE_UNITS = 10
 

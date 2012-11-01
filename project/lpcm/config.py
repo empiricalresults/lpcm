@@ -8,19 +8,13 @@ LPCM_CACHE_TIMEOUT = getattr(settings, 'LPCM_CACHE_TIMEOUT', 0)
 LPCM_TEST_USE_LOCAL_CACHE_ONLY = getattr(settings, 'LPCM_TEST_USE_LOCAL_CACHE_ONLY', True)
 LPCM_DEBUG_USE_LOCAL_CACHE_ONLY = getattr(settings, 'LPCM_DEBUG_USE_LOCAL_CACHE_ONLY', False)
 LPCM_DYNAMODB_TABLE_NAME = getattr(settings, 'LPCM_DYNAMODB_TABLE_NAME', "lpcm")
-try:
-  DYNAMODB_ACCESS_KEY = settings.LPCM_DYNAMODB_ACCESS_KEY
-except AttributeError:
+
+DYNAMODB_ACCESS_KEY = getattr(settings, "LPCM_DYNAMODB_ACCESS_KEY", None)
+DYNAMODB_SECRET_ACCESS_KEY = getattr(settings, "LPCM_DYNAMODB_SECRET_ACCESS_KEY", None)
+if not DYNAMODB_ACCESS_KEY or not DYNAMODB_SECRET_ACCESS_KEY:
   raise ImproperlyConfigured("LPCM Config Error: " +
-    "Please define a value for LPCM_DYNAMODB_ACCESS_KEY in your settings file")
-
-
-try:
-  DYNAMODB_SECRET_ACCESS_KEY = settings.LPCM_DYNAMODB_SECRET_ACCESS_KEY
-except AttributeError:
-  raise ImproperlyConfigured("LPCM Config Error: " +
-    "Please define a value for LPCM_DYNAMODB_SECRET_ACCESS_KEY in your settings file")
-
+    "Please define values for DYNAMODB_ACCESS_KEY and LPCM_DYNAMODB_SECRET_ACCESS_KEY " +
+    "in your settings module")
 
 LPCM_PROVISIONED_THROUGHPUT = getattr(settings, 'LPCM_PROVISIONED_THROUGHPUT',
   {

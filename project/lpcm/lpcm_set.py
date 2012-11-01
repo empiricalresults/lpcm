@@ -34,8 +34,9 @@ class LPCMSet(LargePersistentCachedMap):
     "Appends the set of strings to the current list"
     self._atomic_add_value(key, set(values))
 
-  def _atomic_add_value_to_cache(self, ddb_key, value):
-    self.cache.atomic_update(ddb_key, value,
+  def _atomic_add_value_to_cache(self, key, value):
+    cache_key = self._get_cache_key(key)
+    self.cache.atomic_update(cache_key, value,
       update_operator = set.union, default_value = set())
 
   def increment(self, key, value = 1):

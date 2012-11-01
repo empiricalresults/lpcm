@@ -32,24 +32,22 @@ class LargePersistentCachedMap(object):
     self.cache = Cache(cache_timeout)
 
   def __setitem__(self, key, value):
-    ddb_key = self._get_key_str(key)
-    self.cache.set(ddb_key, value)
+    self.cache.set(self._get_cache_key(key), value)
     if self.cache_only:
       return
     value = self._preprocess_value_before_ddb_save(value)
-    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
-    item = table.new_item(hash_key = ddb_key)
+    item = self._create_new_item(key)
     item['value'] = value
     item.put()
 
   def __getitem__(self, key):
-    ddb_key = self._get_key_str(key)
-    v = self.cache.get(ddb_key)
+    hash_key = self._get_cache_key(key)
+    v = self.cache.get(hash_key)
     if v is not None:
       return v
     if self.cache_only:
-      raise KeyError(key)
-    return self._get_from_dynamodb_and_save_in_cache(key, ddb_key)
+      raise KeyError("{name}:{key}".format(name = self.name, key = key))
+    return self._get_from_dynamodb_and_save_in_cache(key)
 
   def disable_caching(self):
     assert not self.cache_only, "cannot have a cache-only map with caching disabled"
@@ -62,13 +60,26 @@ class LargePersistentCachedMap(object):
       return config.LPCM_DEBUG_USE_LOCAL_CACHE_ONLY
     return False
 
-  def _get_key_str(self, key):
+  def _get_ddb_key(self, key):
     if not isinstance(key, str) and not isinstance(key, unicode):
       key = repr(key) # so you we have tuple and other obj keys
     if is_in_test():
       key = u"__test_{key}".format(key = key)
     key = base64.b32encode(key.encode('utf-8'))
-    return "{self.name}_{key}".format(self = self, key = key)
+
+  def _get_cache_key(self, key):
+    return "{name}_{key}".format(name = self.name, key = self._get_ddb_key(key))
+
+  def _get_ddb_item(self, key):
+    "Tries to get an item from DynamoDB. Throws DynamoDBKeyNotFoundError"
+    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    ddb_key = self._get_ddb_key(key)
+    return table.get_item(hash_key = ddb_key, range_key = self.name)
+
+  def _create_new_item(self, key):
+    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    ddb_key = self._get_ddb_key(key)
+    return table.new_item(hash_key = ddb_key, range_key = self.name)
 
   def _preprocess_value_before_ddb_save(self, value):
     return value
@@ -76,41 +87,40 @@ class LargePersistentCachedMap(object):
   def _postprocess_value_after_ddb_load(self, value):
     return value
 
-  def _get_from_dynamodb_and_save_in_cache(self, key, ddb_key):
-    """ Gets value from dynamodb and puts it in cache,
-      taking care of the cache-miss stampede """
-    if self.cache.get_thread_safe_token(ddb_key):
+  def _get_from_dynamodb_and_save_in_cache(self, key):
+    """ Gets value from dynamodb and puts it in cache, taking care of the cache-miss stampede """
+    cache_key = self._get_cache_key(key)
+    if self.cache.get_thread_safe_token(cache_key):
       # we got the token. i'll get it from db while other threads wait!
-      return self._get_from_dynamodb_and_save_in_cache_stampede_solved(key, ddb_key)
+      return self._get_from_dynamodb_and_save_in_cache_stampede_solved(key)
     # crap! someone is already getting it
     time.sleep(1) # wait a little, and get it again (possibly from cache)
     return self.__getitem__(key)
 
-  def _get_from_dynamodb_and_save_in_cache_stampede_solved(self, key, ddb_key):
+  def _get_from_dynamodb_and_save_in_cache_stampede_solved(self, key):
     """ Gets value from dynamodb and puts it in cache,
       after the cache-miss stampede has been taken care of"""
-    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
     try:
-      item = table.get_item(hash_key = ddb_key)
+      item = self._get_ddb_item(key)
     except DynamoDBKeyNotFoundError:
-      raise KeyError(key)
+      raise KeyError("{name}:{key}".format(name = self.name, key = key))
     value = item['value']
     value = self._postprocess_value_after_ddb_load(value)
-    self.cache.set(ddb_key, value)
+    cache_key = self._get_cache_key(key)
+    self.cache.set(cache_key, value)
     return value
 
   def delete(self, key):
     "Deletes a key-value map from memcached and dynamodb. Ignores it if item does not exist"
-    ddb_key = self._get_key_str(key)
-    self.cache.delete(ddb_key)
+    cache_key = self._get_cache_key(key)
+    self.cache.delete(cache_key)
     if self.cache_only:
       return
-    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
     try:
-      item = table.get_item(hash_key = ddb_key)
-      item.delete()
+      item = self._get_ddb_item(key)
     except DynamoDBKeyNotFoundError:
-      pass
+      return  # delete fails silently
+    item.delete()
 
   def increment(self, key, value = 1):
     if not isinstance(value, numbers.Number):
@@ -125,24 +135,23 @@ class LargePersistentCachedMap(object):
     self._atomic_add_value(key, value * -1)
 
   def _atomic_add_value(self, key, value):
-    ddb_key = self._get_key_str(key)
     if self.cache_only:
-      self._atomic_add_value_to_cache(ddb_key, value)
+      self._atomic_add_value_to_cache(key, value)
       return
-    self._atomic_add_value_to_dynamodb(ddb_key, value)
-    self.cache.delete(ddb_key)  # invalidate cache
+    self._atomic_add_value_to_dynamodb(key, value)
+    self.cache.delete(self._get_cache_key(key))  # invalidate cache
 
-  def _atomic_add_value_to_dynamodb(self, ddb_key, value):
-    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+  def _atomic_add_value_to_dynamodb(self, key, value):
     try:
-      item = table.get_item(hash_key = ddb_key)
+      item = self._get_ddb_item(key)
     except DynamoDBKeyNotFoundError:
-      item = table.new_item(hash_key = ddb_key)
+      item = self._create_new_item(key)
     item.add_attribute('value', value)
     item.save()
 
-  def _atomic_add_value_to_cache(self, ddb_key, value):
-    self.cache.atomic_update(ddb_key, value,
+  def _atomic_add_value_to_cache(self, key, value):
+    cache_key = self._get_cache_key(key)
+    self.cache.atomic_update(cache_key, value,
       update_operator = operator.add, default_value = 0)
 
   def __iter__(self):

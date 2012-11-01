@@ -21,8 +21,8 @@ class Command(BaseCommand):
     table = DynamoDB.create_table(table_name,
       hash_key_name = 'key',
       hash_key_proto_value = 'S',
-      range_key_name = None,
-      range_key_proto_value = None,
+      range_key_name = 'table',
+      range_key_proto_value = 'S',
       read_units = config.LPCM_PROVISIONED_THROUGHPUT['read_units'],
       write_units = config.LPCM_PROVISIONED_THROUGHPUT['write_units'],
       )

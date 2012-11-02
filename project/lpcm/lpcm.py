@@ -2,14 +2,26 @@
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
 import numbers
-import operator
 import time
 from django.conf import settings
 from cache import Cache, CacheDisabled
 from thread_local import is_in_test
-from lpm import LargePersistentMap
+from lpm import LargePersistentMap, MockLPM
 import config
 
+def LPCM(name, cache_only = False, cache_timeout = None):
+  if cache_only or force_cache_only():
+    from lcm import LargeCachedMap
+    return LargeCachedMap(name, cache_timeout)
+  else:
+    return LargePersistentCachedMap(name, cache_timeout)
+
+def force_cache_only():
+  if is_in_test():
+    return config.LPCM_TEST_USE_LOCAL_CACHE_ONLY
+  if settings.DEBUG:
+    return config.LPCM_DEBUG_USE_LOCAL_CACHE_ONLY
+  return False
 
 class LargePersistentCachedMap(object):
   """ A key:value dictionary  which is saved both in Memcached and AWS DynamoDB.
@@ -23,19 +35,15 @@ class LargePersistentCachedMap(object):
     print m2["key1"]
   """
 
-  def __init__(self, name, cache_only = False, cache_timeout = None):
+  def __init__(self, name, cache_timeout = None):
     "When cache_only is true, the data will be stored in memcached only (used in tests)"
     self.name = name
     self.lpm = LargePersistentMap(name)
-    self.cache_only = cache_only or self._force_cache_only()
     self.cache = Cache(cache_timeout)
 
   def __setitem__(self, key, value):
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.set(ddb_key.cache_key, value)
-    if self.cache_only:
-      # TODO self._update_cache_only_keys(key)
-      return
     self.lpm[key] = value
 
   def __getitem__(self, key):
@@ -43,8 +51,6 @@ class LargePersistentCachedMap(object):
     v = self.cache.get(ddb_key.cache_key)
     if v is not None:
       return v
-    if self.cache_only:
-      raise KeyError(u"{name}:{key}".format(name = self.name, key = key))
     return self._get_from_dynamodb_and_save_in_cache(ddb_key)
 
   def __contains__(self, key):
@@ -55,15 +61,7 @@ class LargePersistentCachedMap(object):
     return True
 
   def disable_caching(self):
-    assert not self.cache_only, "cannot have a cache-only map with caching disabled"
     self.cache = CacheDisabled()
-
-  def _force_cache_only(self):
-    if is_in_test():
-      return config.LPCM_TEST_USE_LOCAL_CACHE_ONLY
-    if settings.DEBUG:
-      return config.LPCM_DEBUG_USE_LOCAL_CACHE_ONLY
-    return False
 
   def _get_from_dynamodb_and_save_in_cache(self, ddb_key):
     """ Gets value from dynamodb and puts it in cache, taking care of the cache-miss stampede """
@@ -80,8 +78,6 @@ class LargePersistentCachedMap(object):
     "Deletes a key-value map from memcached and dynamodb. Ignores it if item does not exist"
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.delete(ddb_key.cache_key)
-    if self.cache_only:
-      return
     self.lpm.delete(key)
 
   def increment(self, key, value = 1):
@@ -98,19 +94,15 @@ class LargePersistentCachedMap(object):
 
   def _atomic_add_value(self, key, value):
     ddb_key = self.lpm.generate_ddb_key(key)
-    if self.cache_only:
-      self.cache.atomic_update(ddb_key.cache_key, value,
-        update_operator = operator.add, default_value = 0)
-      return
     self.lpm.increment(key, value)
-    self.cache.delete(ddb_key.cache_key)  # invalidate cache
+    self.cache.delete(ddb_key.cache_key)
 
   def __iter__(self):
     return self.lpm.__iter__()
 
   def items(self):
     """ D.items() -> list of D's (key, value) pairs, as 2-tuples """
-  pass
+    pass
 
   def get(self, k, d = None):
     """ D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None. """
@@ -152,5 +144,3 @@ class LargePersistentCachedMap(object):
   def copy(self):
     raise NotImplementedError
 
-class d(dict):
-  pass

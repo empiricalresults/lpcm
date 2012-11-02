@@ -159,3 +159,61 @@ class LargePersistentMap(object):
   def copy(self):
     raise NotImplementedError
 
+
+class MockLPM(LargePersistentMap):
+  """ A mock object used instead of LPM in cached-only LPCM """
+
+  def __setitem__(self, key, value):
+    pass
+
+  def __getitem__(self, key):
+    raise KeyError()
+
+  def __contains__(self, key):
+    return False
+
+  def delete(self, key):
+    pass
+
+  def increment(self, key, value = 1):
+    pass
+
+  def decrement(self, key, value = 1):
+    pass
+
+  def _atomic_add_value(self, key, value):
+    pass
+
+  def __iter__(self):
+    raise NotImplementedError
+
+  def items(self):
+    raise NotImplementedError
+
+  def get(self, k, d = None):
+    raise NotImplementedError
+
+  def iteritems(self): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def iterkeys(self): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def itervalues(self): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def keys(self): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def pop(self, k, d=None): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def values(self): # real signature unknown; restored from __doc__
+    raise NotImplementedError
+
+  def clear(self):
+    raise NotImplementedError
+
+  def copy(self):
+    raise NotImplementedError
+

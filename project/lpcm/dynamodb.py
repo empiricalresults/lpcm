@@ -1,9 +1,13 @@
 # Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
+from collections import namedtuple
 import boto
 from thread_local import lpcm_thread_local
 import config
+
+DynamoDBKey = namedtuple('DynamoDBKey',
+  field_names = ['hash_key', 'range_key', 'cache_key', 'original_key_obj'])
 
 class DynamoDB(object):
 
@@ -30,6 +34,17 @@ class DynamoDB(object):
       raise cls.TableNotFound("Table {} not found".format(table_name))
     lpcm_thread_local.ddb_table_cache[table_name] = conn.get_table(table_name)
     return lpcm_thread_local.ddb_table_cache[table_name]
+
+  @classmethod
+  def get_item(cls, ddb_key):
+    "Tries to get an item from DynamoDB. Throws DynamoDBKeyNotFoundError"
+    table = cls.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    return table.get_item(hash_key = ddb_key.hash_key, range_key = ddb_key.range_key)
+
+  @classmethod
+  def create_item(cls, ddb_key):
+    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    return table.new_item(hash_key = ddb_key.hash_key, range_key = ddb_key.range_key)
 
   @classmethod
   def create_table(cls, table_name, hash_key_name, hash_key_proto_value,

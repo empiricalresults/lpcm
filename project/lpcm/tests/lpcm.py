@@ -14,22 +14,32 @@ class TestLPCM(LPCMTestCase):
     cache.clear()
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
-  def test_non_cache_only(self):
-    regular_map = LPCM(name = "some_map", cache_only = False)
-    self.assertFalse(regular_map.cache_only)
-    regular_map["a"] = 123
-    regular_map["b"] = "some string"
-    regular_map["c"] = 7.890
+  def test_regular_get(self):
+    some_map = LPCM(name = "some_map", cache_only = False)
+    another_map = LPCM(name = "another_map", cache_only = False)
+    self.assertFalse(some_map.cache_only)
+    some_map["a"] = 123
+    some_map["b"] = "some string"
+    some_map["c"] = 7.890
+    another_map["a"] = 321
+    another_map["b"] = "another string"
+    another_map["c"] = 8.901
     try:
-      self.assertEquals(regular_map["a"], 123)
-      self.assertEquals(regular_map["b"], "some string")
-      self.assertEquals(regular_map["c"], 7.890)
+      self.assertEquals(some_map["a"], 123)
+      self.assertEquals(some_map["b"], "some string")
+      self.assertEquals(some_map["c"], 7.890)
+      self.assertEquals(another_map["a"], 321)
+      self.assertEquals(another_map["b"], "another string")
+      self.assertEquals(another_map["c"], 8.901)
     finally:
-      regular_map.delete("a")
-      regular_map.delete("b")
-      regular_map.delete("c")
+      some_map.delete("a")
+      some_map.delete("b")
+      some_map.delete("c")
+      another_map.delete("a")
+      another_map.delete("b")
+      another_map.delete("c")
     with self.assertRaises(KeyError):
-      a = regular_map["bad_key"]
+      a = some_map["bad_key"]
 
   def test_cache_only(self):
     cache_only_map = LPCM(name = "some_map", cache_only = True)
@@ -45,7 +55,7 @@ class TestLPCM(LPCMTestCase):
       a = cache_only_map["a"]
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
-  def test_presistent(self):
+  def test_persistent(self):
     regular_map = LPCM(name = "some_map", cache_only = False)
     regular_map["a"] = 123
     regular_map["b"] = "some string"
@@ -145,7 +155,7 @@ class TestLPCM(LPCMTestCase):
       regular_map.delete('a')
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
-  def test_increment_non_existant_regular(self):
+  def test_increment_non_existent_regular(self):
     regular_map = LPCM(name = "some_map", cache_only = False)
     try:
       regular_map.increment('new_key')

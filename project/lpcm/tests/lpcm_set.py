@@ -85,6 +85,7 @@ class TestLPCMSet(LPCMTestCase):
       self.assertEquals(regular_map["some_list"], {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
     finally:
       regular_map.delete("some_list")
+      regular_map.delete("other_list")
 
   @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
   def test_insert_values_non_cache_only_non_existent(self):

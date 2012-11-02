@@ -71,6 +71,22 @@ class TestLPCM(LPCMTestCase):
       regular_map.delete("c")
       regular_map.delete("d")
 
+  @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
+  def test_contains_regular(self):
+    regular_map = LPCM(name = "some_map", cache_only = False)
+    try:
+      regular_map["a"] = 123
+      self.assertIn('a', regular_map)
+      self.assertNotIn('bad_key', regular_map)
+    finally:
+      regular_map.delete("a")
+
+  def test_contains_cache_only(self):
+    cache_only_map = LPCM(name = "some_map", cache_only = True)
+    cache_only_map["a"] = 123
+    self.assertIn('a', cache_only_map)
+    self.assertNotIn('bad_key', cache_only_map)
+
   def test_delete_cache_only(self):
     cache_only_map = LPCM(name = "some_map", cache_only = True)
     cache_only_map["a"] = 123
@@ -91,6 +107,12 @@ class TestLPCM(LPCMTestCase):
       a = regular_map["a"]
     # deleting non existent key should be fine
     regular_map.delete("lala_i_don't_exist")
+
+  def test_get_cache_only(self):
+    cache_only_map = LPCM(name = "some_map", cache_only = True)
+    cache_only_map["a"] = 123
+    self.assertEquals(cache_only_map.get("a", 234), 123)
+    self.assertEquals(cache_only_map.get("bad_key", 234), 234)
 
   def test_unicode_cache_only(self):
     cache_only_map = LPCM(name = "some_map", cache_only = True)
@@ -201,3 +223,20 @@ class TestLPCM(LPCMTestCase):
       self.assertEquals(regular_map['a'], 123)  # reads from the untouched dynamodb
     finally:
       regular_map.delete("a")
+
+  @unittest.skipIf(config.LPCM_TEST_USE_LOCAL_CACHE_ONLY, "Disable in CACHE_ONLY mode")
+  def test_iter(self):
+    regular_map = LPCM(name = "some_map", cache_only = False)
+    unicode_key = 'Ivan Krsti\xc4\x87'.decode('utf8')
+    try:
+      regular_map["a"] = 123
+      regular_map["b"] = "some string"
+      regular_map["c"] = 7.890
+      regular_map[unicode_key] = u"you are always a pain unicode"
+      keys = set([k for k in regular_map])
+      self.assertEquals(keys, {'a', 'b', 'c', unicode_key})
+    finally:
+      regular_map.delete("a")
+      regular_map.delete("b")
+      regular_map.delete("c")
+      regular_map.delete(unicode_key)

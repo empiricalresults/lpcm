@@ -2,7 +2,6 @@
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
 import numbers
-from numpy.oldnumeric.ma import domain_safe_divide
 import operator
 import time
 import base64
@@ -50,6 +49,13 @@ class LargePersistentCachedMap(object):
     if self.cache_only:
       raise KeyError(u"{name}:{key}".format(name = self.name, key = key))
     return self._get_from_dynamodb_and_save_in_cache(ddb_key)
+
+  def __contains__(self, key):
+    try:
+      v = self[key]
+    except KeyError:
+      return False
+    return True
 
   def disable_caching(self):
     assert not self.cache_only, "cannot have a cache-only map with caching disabled"
@@ -148,26 +154,64 @@ class LargePersistentCachedMap(object):
     self.cache.atomic_update(ddb_key.cache_key, value,
       update_operator = operator.add, default_value = 0)
 
+
+  def __iter__(self):
+    "Note: this method is EXPENSIVE! PLease only use if absolutely needed"
+    ddb_key = self._generate_ddb_key('dummy_key')
+    result = DynamoDB.query(ddb_key, attributes_to_get = ['table', 'key'])
+    for item in result:
+      key = item['key']
+      yield base64.b32decode(key).decode('utf-8')
+
+  def items(self):
+    """ D.items() -> list of D's (key, value) pairs, as 2-tuples """
+  pass
+
+  def get(self, k, d = None):
+    """ D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None. """
+    try:
+      return self[k]
+    except KeyError:
+      return d
+
+  def iteritems(self): # real signature unknown; restored from __doc__
+    """ D.iteritems() -> an iterator over the (key, value) items of D """
+    pass
+
+  def iterkeys(self): # real signature unknown; restored from __doc__
+    """ D.iterkeys() -> an iterator over the keys of D """
+    pass
+
+  def itervalues(self): # real signature unknown; restored from __doc__
+    """ D.itervalues() -> an iterator over the values of D """
+    pass
+
+  def keys(self): # real signature unknown; restored from __doc__
+    """ D.keys() -> list of D's keys """
+    return []
+
+  def pop(self, k, d=None): # real signature unknown; restored from __doc__
+    """
+    D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
+    If key is not found, d is returned if given, otherwise KeyError is raised
+    """
+    pass
+
+  def values(self): # real signature unknown; restored from __doc__
+    """ D.values() -> list of D's values """
+    return []
+
   def _preprocess_value_before_ddb_save(self, value):
     return value
 
   def _postprocess_value_after_ddb_load(self, value):
     return value
 
-  def __iter__(self):
-    raise NotImplementedError
-
-  def keys(self):
-    raise NotImplementedError
-
-  def values(self):
-    raise NotImplementedError
-
-  def itervalues(self):
-    raise NotImplementedError
-
   def clear(self):
     raise NotImplementedError
 
   def copy(self):
     raise NotImplementedError
+
+class d(dict):
+  pass

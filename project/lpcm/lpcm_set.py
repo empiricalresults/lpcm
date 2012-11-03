@@ -5,6 +5,7 @@ from lpcm import LargePersistentCachedMap
 from lcm import LargeCachedMap
 from lpm import LargePersistentMap
 from models import Signals
+from key import LPCMKey
 
 class LargePersistentCachedMapForSets(LargePersistentCachedMap):
   """ LPCM with convenience for maps of type key:set(v1, v2)
@@ -57,14 +58,18 @@ class LargeCachedMapForSets(LargeCachedMap):
       return set()
 
   def insert_values(self, key, values):
-    ddb_key = self.lpm.generate_ddb_key(key)
-    self.cache.atomic_update(ddb_key.cache_key, values,
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
+    cmp_key = LPCMKey(self.name, key)
+    self.cache.atomic_update(cmp_key.cache_key, values,
       update_operator = set.union, default_value = set())
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
 
   def remove_values(self, key, values):
-    ddb_key = self.lpm.generate_ddb_key(key)
-    self.cache.atomic_update(ddb_key.cache_key, values,
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
+    cmp_key = LPCMKey(self.name, key)
+    self.cache.atomic_update(cmp_key.cache_key, values,
       update_operator = set.difference, default_value = set())
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
 
   def increment(self, key, value = 1):
     raise NotImplementedError

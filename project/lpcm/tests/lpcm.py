@@ -27,8 +27,8 @@ class TestLPCM(LPCMTestCase):
     # Make sure we can read from cache
     some_map_lpm = some_map.lpm
     another_map_lpm = another_map.lpm
-    some_map.lpm = MockLPM('some_map')
-    another_map.lpm = MockLPM('another_map')
+    some_map.lpm = MockLPM()
+    another_map.lpm = MockLPM()
     try:
       self.assertEquals(some_map["a"], 123)
       self.assertEquals(some_map["b"], "some string")
@@ -139,10 +139,11 @@ class TestLPCM(LPCMTestCase):
     finally:
       some_map.delete("a")
 
-  def test_iter(self):
+  def test_keys(self):
     some_map = LPCM(name = "some_map")
     another_map = LPCM(name = "another_map")
     unicode_key = 'Ivan Krsti\xc4\x87'.decode('utf8')
+    self.assertEquals(some_map.keys(), [])
     try:
       some_map["a"] = 123
       some_map["b"] = "some string"
@@ -151,11 +152,9 @@ class TestLPCM(LPCMTestCase):
       another_map['d'] = 345
       another_map['e'] = 456
       some_map[unicode_key] = u"you are always a pain unicode"
-      some_map_keys = set([k for k in some_map])
-      self.assertEquals(some_map_keys, {'a', 'b', 'c', unicode_key})
+      self.assertEquals(set(some_map.keys()), {'a', 'b', 'c', unicode_key})
       another_map.delete('e')
-      another_map_keys = set([k for k in some_map])
-      self.assertEquals(another_map_keys, {'a', 'd'})
+      self.assertEquals(set(another_map.keys()), {'a', 'd'})
     finally:
       some_map.delete("a")
       some_map.delete("b")

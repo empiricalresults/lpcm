@@ -6,9 +6,6 @@ import boto
 from thread_local import lpcm_thread_local
 import config
 
-DynamoDBKey = namedtuple('DynamoDBKey',
-  field_names = ['hash_key', 'range_key', 'cache_key', 'original_key_obj'])
-
 class DynamoDB(object):
 
   @classmethod
@@ -36,15 +33,15 @@ class DynamoDB(object):
     return lpcm_thread_local.ddb_table_cache[table_name]
 
   @classmethod
-  def get_item(cls, ddb_key):
+  def get_item(cls, cmp_key):
     "Tries to get an item from DynamoDB. Throws DynamoDBKeyNotFoundError"
     table = cls.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
-    return table.get_item(hash_key = ddb_key.hash_key, range_key = ddb_key.range_key)
+    return table.get_item(hash_key = cmp_key.hash_key, range_key = cmp_key.range_key)
 
   @classmethod
-  def create_item(cls, ddb_key):
+  def create_item(cls, cmp_key):
     table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
-    return table.new_item(hash_key = ddb_key.hash_key, range_key = ddb_key.range_key)
+    return table.new_item(hash_key = cmp_key.hash_key, range_key = cmp_key.range_key)
 
   @classmethod
   def create_table(cls, table_name, hash_key_name, hash_key_proto_value,
@@ -67,10 +64,10 @@ class DynamoDB(object):
     return table
 
   @classmethod
-  def query(cls, ddb_key, attributes_to_get = None, request_limit = None,
+  def query(cls, cmp_key, attributes_to_get = None, request_limit = None,
             max_results = None, consistent_read = False):
     table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
-    return table.query(hash_key = ddb_key.hash_key, range_key_condition = None,
+    return table.query(hash_key = cmp_key.hash_key, range_key_condition = None,
       attributes_to_get = attributes_to_get, request_limit = request_limit,
       max_results = max_results, consistent_read = consistent_read)
 

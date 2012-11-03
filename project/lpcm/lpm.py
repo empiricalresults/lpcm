@@ -1,14 +1,10 @@
 # Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
-import numbers
-import operator
-import time
 import base64
-from django.conf import settings
 from boto.dynamodb.exceptions import DynamoDBKeyNotFoundError
-from dynamodb import DynamoDB, DynamoDBKey
-from thread_local import is_in_test
-import config
+from dynamodb import DynamoDB
+from key import LPCMKey
+
 
 
 class LargePersistentMap(object):
@@ -27,18 +23,18 @@ class LargePersistentMap(object):
     self.name = name
 
   def __setitem__(self, key, value):
-    ddb_key = self.generate_ddb_key(key)
+    cmp_key = LPCMKey(self.name, key)
     value = self._preprocess_value_before_ddb_save(value)
-    item = DynamoDB.create_item(ddb_key)
+    item = DynamoDB.create_item(cmp_key)
     item['value'] = value
     item.put()
 
   def __getitem__(self, key):
-    ddb_key = self.generate_ddb_key(key)
+    cmp_key = LPCMKey(self.name, key)
     try:
-      item = DynamoDB.get_item(ddb_key)
+      item = DynamoDB.get_item(cmp_key)
     except DynamoDBKeyNotFoundError:
-      raise KeyError(u"{name}:{key}".format(name = self.name, key = ddb_key.original_key_obj))
+      raise KeyError(u"{name}:{key}".format(name = self.name, key = cmp_key.original_key_obj))
     value = item['value']
     value = self._postprocess_value_after_ddb_load(value)
     return value
@@ -50,50 +46,30 @@ class LargePersistentMap(object):
       return False
     return True
 
-  def generate_ddb_key(self, key):
-    if isinstance(key, str) or isinstance(key, unicode):
-      range_key = key
-    else:
-      range_key = repr(key) # so you we have tuple and other obj keys
-    range_key =  base64.b32encode(range_key.encode('utf-8'))
-    hash_key = self._get_ddb_hash_key()
-    cache_key = "{hash_key}_{range_key}".format(hash_key = hash_key, range_key = range_key)
-    return DynamoDBKey(
-      hash_key = self._get_ddb_hash_key(),
-      range_key = range_key,
-      cache_key = cache_key,
-      original_key_obj = key,
-    )
-
-  def _get_ddb_hash_key(self):
-    hash_key = self.name
-    if is_in_test():
-      hash_key = u"__test_{hash_key}".format(hash_key = hash_key)
-    return hash_key
 
   def delete(self, key):
     "Deletes a key-value map from dynamodb. Ignores it if item does not exist"
-    ddb_key = self.generate_ddb_key(key)
+    cmp_key = LPCMKey(self.name, key)
     try:
-      item = DynamoDB.get_item(ddb_key)
+      item = DynamoDB.get_item(cmp_key)
     except DynamoDBKeyNotFoundError:
       return  # delete fails silently
     item.delete()
 
   def atomic_add_value(self, key, value):
-    ddb_key = self.generate_ddb_key(key)
+    cmp_key = LPCMKey(self.name, key)
     try:
-      item = DynamoDB.get_item(ddb_key)
+      item = DynamoDB.get_item(cmp_key)
     except DynamoDBKeyNotFoundError:
-      item = DynamoDB.create_item(ddb_key)
+      item = DynamoDB.create_item(cmp_key)
     item.add_attribute('value', value)
     item.save()
 
   def atomic_delete_values(self, key, values):
     """Deletes a set of values from an item. Fails silently if item does not exist"""
-    ddb_key = self.generate_ddb_key(key)
+    cmp_key = LPCMKey(self.name, key)
     try:
-      item = DynamoDB.get_item(ddb_key)
+      item = DynamoDB.get_item(cmp_key)
     except DynamoDBKeyNotFoundError:
       return # Nothing to do
     item.delete_attribute('value', values)
@@ -102,8 +78,8 @@ class LargePersistentMap(object):
 
   def __iter__(self):
     "Note: this method is EXPENSIVE! PLease only use if absolutely needed"
-    ddb_key = self.generate_ddb_key('dummy_key')
-    result = DynamoDB.query(ddb_key, attributes_to_get = ['table', 'key'])
+    cmp_key = LPCMKey(self.name, 'dummy_key')
+    result = DynamoDB.query(cmp_key, attributes_to_get = ['table', 'key'])
     for item in result:
       key = item['key']
       yield base64.b32decode(key).decode('utf-8')
@@ -160,7 +136,7 @@ class LargePersistentMap(object):
 
 
 
-class MockLPM(LargePersistentMap):
+class MockLPM(object):
   """ A mock object used instead of LPM in cached-only LPCM """
 
   def __setitem__(self, key, value):
@@ -183,37 +159,3 @@ class MockLPM(LargePersistentMap):
 
   def _atomic_add_value(self, key, value):
     pass
-
-  def __iter__(self):
-    raise NotImplementedError
-
-  def items(self):
-    raise NotImplementedError
-
-  def get(self, k, d = None):
-    raise NotImplementedError
-
-  def iteritems(self): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def iterkeys(self): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def itervalues(self): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def keys(self): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def pop(self, k, d=None): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def values(self): # real signature unknown; restored from __doc__
-    raise NotImplementedError
-
-  def clear(self):
-    raise NotImplementedError
-
-  def copy(self):
-    raise NotImplementedError
-

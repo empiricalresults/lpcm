@@ -90,3 +90,18 @@ class TestLCM(LPCMTestCase):
     with self.assertRaises(ValueError):
       some_map.increment('a', 'bcde')
 
+  def test_keys(self):
+    some_map = LCM(name = "some_map")
+    another_map = LCM(name = "another_map")
+    unicode_key = 'Ivan Krsti\xc4\x87'.decode('utf8')
+    self.assertEquals(some_map.keys(), [])
+    some_map["a"] = 123
+    some_map["b"] = "some string"
+    some_map["c"] = 7.890
+    another_map['a'] = 234
+    another_map['d'] = 345
+    another_map['e'] = 456
+    some_map[unicode_key] = u"you are always a pain unicode"
+    self.assertEquals(set(some_map.keys()), {'a', 'b', 'c', unicode_key})
+    another_map.delete('e')
+    self.assertEquals(set(another_map.keys()), {'a', 'd'})

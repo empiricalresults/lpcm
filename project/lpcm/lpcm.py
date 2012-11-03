@@ -5,6 +5,7 @@ import numbers
 import time
 from cache import Cache, CacheDisabled
 from lpm import LargePersistentMap
+from models import Signals
 
 class LargePersistentCachedMap(object):
   """ A key:value dictionary  which is saved both in Memcached and AWS DynamoDB.
@@ -24,9 +25,11 @@ class LargePersistentCachedMap(object):
     self.cache = Cache(cache_timeout)
 
   def __setitem__(self, key, value):
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key)
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.set(ddb_key.cache_key, value)
     self.lpm[key] = value
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key)
 
   def __getitem__(self, key):
     ddb_key = self.lpm.generate_ddb_key(key)
@@ -34,6 +37,13 @@ class LargePersistentCachedMap(object):
     if v is not None:
       return v
     return self._get_from_dynamodb_and_save_in_cache(ddb_key)
+
+  def get(self, k, d = None):
+    """ D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None. """
+    try:
+      return self[k]
+    except KeyError:
+      return d
 
   def __contains__(self, key):
     try:
@@ -75,39 +85,23 @@ class LargePersistentCachedMap(object):
     self._atomic_add_value(key, value * -1)
 
   def _atomic_add_value(self, key, value):
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key)
     ddb_key = self.lpm.generate_ddb_key(key)
     self.lpm.increment(key, value)
     self.cache.delete(ddb_key.cache_key)
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key)
 
   def __iter__(self):
+    """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
     return self.lpm.__iter__()
 
   def items(self):
-    """ D.items() -> list of D's (key, value) pairs, as 2-tuples """
-    pass
-
-  def get(self, k, d = None):
-    """ D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None. """
-    try:
-      return self[k]
-    except KeyError:
-      return d
-
-  def iteritems(self): # real signature unknown; restored from __doc__
-    """ D.iteritems() -> an iterator over the (key, value) items of D """
-    pass
-
-  def iterkeys(self): # real signature unknown; restored from __doc__
-    """ D.iterkeys() -> an iterator over the keys of D """
-    pass
-
-  def itervalues(self): # real signature unknown; restored from __doc__
-    """ D.itervalues() -> an iterator over the values of D """
-    pass
+    """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
+    return [(k, self[k]) for k in self]
 
   def keys(self): # real signature unknown; restored from __doc__
-    """ D.keys() -> list of D's keys """
-    return []
+    """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
+    return [k for k in self]
 
   def pop(self, k, d=None): # real signature unknown; restored from __doc__
     """
@@ -115,10 +109,6 @@ class LargePersistentCachedMap(object):
     If key is not found, d is returned if given, otherwise KeyError is raised
     """
     pass
-
-  def values(self): # real signature unknown; restored from __doc__
-    """ D.values() -> list of D's values """
-    return []
 
   def clear(self):
     raise NotImplementedError

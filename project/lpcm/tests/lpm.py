@@ -73,19 +73,19 @@ class TestLPM(LPCMTestCase):
     some_map = LPM(name = "some_map")
     try:
       some_map['a'] = 41
-      some_map.increment('a')
-      self.assertEquals(some_map['a'], 42)
-      some_map.increment('a', 4.2)
-      self.assertEquals(some_map['a'], 46.2)
+      some_map.atomic_add_value('a', -1)
+      self.assertEquals(some_map['a'], 40)
+      some_map.atomic_add_value('a', 4.2)
+      self.assertEquals(some_map['a'], 44.2)
     finally:
       some_map.delete('a')
 
   def test_increment_non_existent(self):
     some_map = LPM(name = "some_map")
     try:
-      some_map.increment('new_key')
+      some_map.atomic_add_value('new_key', 1)
       self.assertEquals(some_map['new_key'], 1)
-      some_map.increment('another_key', 10)
+      some_map.atomic_add_value('another_key', 10)
       self.assertEquals(some_map['another_key'], 10)
     finally:
       some_map.delete('new_key')
@@ -95,22 +95,10 @@ class TestLPM(LPCMTestCase):
     some_map = LPM(name = "some_map")
     try:
       with self.assertRaises(ValueError):
-        some_map.increment('new_key', 'bcde')
+        some_map.atomic_add_value('new_key', 'bcde')
     finally:
       some_map.delete('new_key')
 
-  def test_decrement(self):
-    some_map = LPM(name = "some_map")
-    try:
-      some_map['a'] = 43
-      some_map.decrement('a')
-      self.assertEquals(some_map['a'], 42)
-      some_map.decrement('a', 1.9)
-      self.assertEquals(some_map['a'], 40.1)
-      some_map.decrement('a', 50.1)
-      self.assertEquals(some_map['a'], -10)
-    finally:
-      some_map.delete('a')
 
   def test_iter(self):
     some_map = LPM(name = "some_map")

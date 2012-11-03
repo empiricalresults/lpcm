@@ -80,19 +80,7 @@ class LargePersistentMap(object):
       return  # delete fails silently
     item.delete()
 
-  def increment(self, key, value = 1):
-    if not isinstance(value, (numbers.Number, set, frozenset)):
-      raise ValueError(
-        "Invalid increment value: {}. Only numbers are supported".format(value))
-    self._atomic_add_value(key, value)
-
-  def decrement(self, key, value = 1):
-    if not isinstance(value, numbers.Number):
-      raise ValueError(
-        "Invalid decrement value: {}. Only numbers are supported".format(value))
-    self._atomic_add_value(key, value * -1)
-
-  def _atomic_add_value(self, key, value):
+  def atomic_add_value(self, key, value):
     ddb_key = self.generate_ddb_key(key)
     try:
       item = DynamoDB.get_item(ddb_key)
@@ -100,6 +88,17 @@ class LargePersistentMap(object):
       item = DynamoDB.create_item(ddb_key)
     item.add_attribute('value', value)
     item.save()
+
+  def atomic_delete_values(self, key, values):
+    """Deletes a set of values from an item. Fails silently if item does not exist"""
+    ddb_key = self.generate_ddb_key(key)
+    try:
+      item = DynamoDB.get_item(ddb_key)
+    except DynamoDBKeyNotFoundError:
+      return # Nothing to do
+    item.delete_attribute('value', values)
+    item.save()
+
 
   def __iter__(self):
     "Note: this method is EXPENSIVE! PLease only use if absolutely needed"

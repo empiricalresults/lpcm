@@ -4,5 +4,5 @@
 from  django import dispatch
 
 class Signals(object):
-  pre_update = dispatch.Signal(providing_args=["map_name", "key"])
-  post_update = dispatch.Signal(providing_args=["map_name", "key"])
+  pre_update = dispatch.Signal(providing_args=["map_name", "key", "action"])
+  post_update = dispatch.Signal(providing_args=["map_name", "key", "action"])

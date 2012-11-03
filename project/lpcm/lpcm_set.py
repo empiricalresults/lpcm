@@ -4,7 +4,7 @@
 from lpcm import LargePersistentCachedMap
 from lcm import LargeCachedMap
 from lpm import LargePersistentMap
-
+from models import Signals
 
 class LargePersistentCachedMapForSets(LargePersistentCachedMap):
   """ LPCM with convenience for maps of type key:set(v1, v2)
@@ -12,6 +12,8 @@ class LargePersistentCachedMapForSets(LargePersistentCachedMap):
     m["key2"] = set([1, 2])
     Supports atomic insertion and removing of values:
     m.insert_values("key1", set(["d", "e"]))
+    LPCMSets return empty sets for non-existent keys
+    m["new-key"] returns set()
   """
 
   def __init__(self, name, cache_timeout=None):
@@ -22,8 +24,19 @@ class LargePersistentCachedMapForSets(LargePersistentCachedMap):
   def __setitem__(self, key, value):
     return super(LargePersistentCachedMapForSets, self).__setitem__(key, set(value))
 
+  def __getitem__(self, key):
+    "Return empty set for non-existent keys"
+    try:
+      return super(LargePersistentCachedMapForSets, self).__getitem__(key)
+    except KeyError:
+      return set()
+
+
   def insert_values(self, key, values):
     self._atomic_add_value(key, set(values))
+
+  def remove_values(self, key, values):
+    self._atomic_delete_values(key, set(values))
 
   def increment(self, key, value = 1):
     raise NotImplementedError
@@ -36,10 +49,22 @@ class LargeCachedMapForSets(LargeCachedMap):
   def __setitem__(self, key, value):
     return super(LargeCachedMapForSets, self).__setitem__(key, set(value))
 
+  def __getitem__(self, key):
+    "Return empty set for non-existent keys"
+    try:
+      return super(LargeCachedMapForSets, self).__getitem__(key)
+    except KeyError:
+      return set()
+
   def insert_values(self, key, values):
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.atomic_update(ddb_key.cache_key, values,
-    update_operator = set.union, default_value = set())
+      update_operator = set.union, default_value = set())
+
+  def remove_values(self, key, values):
+    ddb_key = self.lpm.generate_ddb_key(key)
+    self.cache.atomic_update(ddb_key.cache_key, values,
+      update_operator = set.difference, default_value = set())
 
   def increment(self, key, value = 1):
     raise NotImplementedError

@@ -151,8 +151,11 @@ class TestLPCM(LPCMTestCase):
       another_map['d'] = 345
       another_map['e'] = 456
       some_map[unicode_key] = u"you are always a pain unicode"
-      keys = set([k for k in some_map])
-      self.assertEquals(keys, {'a', 'b', 'c', unicode_key})
+      some_map_keys = set([k for k in some_map])
+      self.assertEquals(some_map_keys, {'a', 'b', 'c', unicode_key})
+      another_map.delete('e')
+      another_map_keys = set([k for k in some_map])
+      self.assertEquals(another_map_keys, {'a', 'd'})
     finally:
       some_map.delete("a")
       some_map.delete("b")

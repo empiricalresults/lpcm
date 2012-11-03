@@ -25,11 +25,11 @@ class LargePersistentCachedMap(object):
     self.cache = Cache(cache_timeout)
 
   def __setitem__(self, key, value):
-    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key)
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.set(ddb_key.cache_key, value)
     self.lpm[key] = value
-    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key)
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
 
   def __getitem__(self, key):
     ddb_key = self.lpm.generate_ddb_key(key)
@@ -68,9 +68,11 @@ class LargePersistentCachedMap(object):
 
   def delete(self, key):
     "Deletes a key-value map from memcached and dynamodb. Ignores it if item does not exist"
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'delete')
     ddb_key = self.lpm.generate_ddb_key(key)
     self.cache.delete(ddb_key.cache_key)
     self.lpm.delete(key)
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'delete')
 
   def increment(self, key, value = 1):
     if not isinstance(value, numbers.Number):
@@ -85,11 +87,18 @@ class LargePersistentCachedMap(object):
     self._atomic_add_value(key, value * -1)
 
   def _atomic_add_value(self, key, value):
-    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key)
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
     ddb_key = self.lpm.generate_ddb_key(key)
-    self.lpm.increment(key, value)
+    self.lpm.atomic_add_value(key, value)
     self.cache.delete(ddb_key.cache_key)
-    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key)
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
+
+  def _atomic_delete_values(self, key, values):
+    Signals.pre_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
+    ddb_key = self.lpm.generate_ddb_key(key)
+    self.lpm.atomic_delete_values(key, values)
+    self.cache.delete(ddb_key.cache_key)
+    Signals.post_update.send(sender = self.__class__, map_name = self.name, key = key, action = 'put')
 
   def __iter__(self):
     """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
@@ -99,11 +108,11 @@ class LargePersistentCachedMap(object):
     """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
     return [(k, self[k]) for k in self]
 
-  def keys(self): # real signature unknown; restored from __doc__
-    """ Note: this method is EXPENSIVE! PLease only use if absolutely needed"""
+  def keys(self):
+    """ Note: this method is EXPENSIVE! PLease only use if absoluely needed"""
     return [k for k in self]
 
-  def pop(self, k, d=None): # real signature unknown; restored from __doc__
+  def pop(self, k, d = None):
     """
     D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
     If key is not found, d is returned if given, otherwise KeyError is raised
@@ -111,8 +120,10 @@ class LargePersistentCachedMap(object):
     pass
 
   def clear(self):
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def copy(self):
-    raise NotImplementedError
+    raise NotImplementedError()
+
+
 

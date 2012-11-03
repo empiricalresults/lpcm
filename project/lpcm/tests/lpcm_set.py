@@ -48,6 +48,7 @@ class TestLPCMSet(LPCMTestCase):
       self.assertEquals(another_map["b"], {"456","789"})
       self.assertEquals(another_map["c"], {5, 6, 7, 8})
       self.assertEquals(another_map["d"], set())
+      self.assertEquals(another_map["bad_key"], set())  # non-existent keys return empty sets
     finally:
       some_map.delete("a")
       some_map.delete("b")
@@ -57,8 +58,6 @@ class TestLPCMSet(LPCMTestCase):
       another_map.delete("b")
       another_map.delete("c")
       another_map.delete("d")
-    with self.assertRaises(KeyError):
-      a = some_map["bad_key"]
 
   def test_insert_values(self):
     some_map = LPCMSet(name = "some_map")
@@ -73,6 +72,22 @@ class TestLPCMSet(LPCMTestCase):
     finally:
       some_map.delete("some_list")
       some_map.delete("other_list")
+
+  def test_remove_values(self):
+    some_map = LPCMSet(name = "some_map")
+    some_map["some_list"] = [1,2,3,4]
+    some_map.remove_values("some_list", [1, 4])
+    some_map.remove_values("some_list", [3])
+    some_map.remove_values("some_list", [31415])  # removing non-existent fails silently
+    some_map.remove_values("other_list", [5, 6, 7])
+    cache.clear()
+    try:
+      self.assertEquals(some_map["some_list"], {2})
+      self.assertEquals(some_map["other_list"], set())
+    finally:
+      some_map.delete("some_list")
+      some_map.delete("other_list")
+
 
 class TestLCMSet(LPCMTestCase):
 
@@ -105,8 +120,7 @@ class TestLCMSet(LPCMTestCase):
     self.assertEquals(another_map["c"], {5, 6, 7, 8})
     self.assertEquals(another_map["d"], set())
     cache.clear()
-    with self.assertRaises(KeyError):
-      _ = some_map["a"]
+    self.assertEquals(another_map["a"], set())  # non-existent keys return empty sets
 
   def test_insert_values(self):
     some_map = LCMSet(name = "some_map")
@@ -116,3 +130,13 @@ class TestLCMSet(LPCMTestCase):
     some_map.insert_values("other_list", [10, 11, 12, 13])
     self.assertEquals(some_map["some_list"], {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
     self.assertEquals(some_map["other_list"], {10, 11, 12, 13})
+
+  def test_remove_values(self):
+    some_map = LCMSet(name = "some_map")
+    some_map["some_list"] = [1,2,3,4]
+    some_map.remove_values("some_list", [1, 4])
+    some_map.remove_values("some_list", [3])
+    some_map.remove_values("some_list", [31415])  # removing non-existent fails silently
+    some_map.remove_values("other_list", [5, 6, 7])
+    self.assertEquals(some_map["some_list"], {2})
+    self.assertEquals(some_map["other_list"], set())

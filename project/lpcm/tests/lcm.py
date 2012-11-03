@@ -1,11 +1,9 @@
 # Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
-import unittest
 from django.core.cache import cache
 from base import LPCMTestCase
 from ..lcm import LargeCachedMap as LCM
-from .. import config
 
 class TestLCM(LPCMTestCase):
 

@@ -81,7 +81,7 @@ class LargePersistentMap(object):
     item.delete()
 
   def increment(self, key, value = 1):
-    if not isinstance(value, numbers.Number):
+    if not isinstance(value, (numbers.Number, set, frozenset)):
       raise ValueError(
         "Invalid increment value: {}. Only numbers are supported".format(value))
     self._atomic_add_value(key, value)
@@ -158,6 +158,7 @@ class LargePersistentMap(object):
 
   def copy(self):
     raise NotImplementedError
+
 
 
 class MockLPM(LargePersistentMap):

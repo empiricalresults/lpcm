@@ -4,4 +4,4 @@
 from lpm import TestLPM
 from lcm import TestLCM
 from lpcm import TestLPCM
-from lpcm_set import TestLPCMSet
+from lpcm_set import TestLPCMSet, TestLCMSet

@@ -3,31 +3,13 @@
 
 import numbers
 import time
-from django.conf import settings
 from cache import Cache, CacheDisabled
-from thread_local import is_in_test
-from lpm import LargePersistentMap, MockLPM
-import config
-
-def LPCM(name, cache_only = False, cache_timeout = None):
-  if cache_only or force_cache_only():
-    from lcm import LargeCachedMap
-    return LargeCachedMap(name, cache_timeout)
-  else:
-    return LargePersistentCachedMap(name, cache_timeout)
-
-def force_cache_only():
-  if is_in_test():
-    return config.LPCM_TEST_USE_LOCAL_CACHE_ONLY
-  if settings.DEBUG:
-    return config.LPCM_DEBUG_USE_LOCAL_CACHE_ONLY
-  return False
+from lpm import LargePersistentMap
 
 class LargePersistentCachedMap(object):
   """ A key:value dictionary  which is saved both in Memcached and AWS DynamoDB.
     Create a map by simply calling the constructor with the map name.
     Supported value types are strings and numbers. Maximum value size is 60kb.
-
     m = LargePersistentCachedMap("my_table")
     m["key1"] = "some string"
     m["key2"] = set(["d", "e"])31415

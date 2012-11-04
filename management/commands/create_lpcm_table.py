@@ -19,14 +19,14 @@ class Command(BaseCommand):
       logging.warning("LPCM table already exists and will not be recreated.")
       return
     table = DynamoDB.create_table(table_name,
-      hash_key_name = 'key',
+      hash_key_name = 'table',
       hash_key_proto_value = 'S',
-      range_key_name = None,
-      range_key_proto_value = None,
+      range_key_name = 'key',
+      range_key_proto_value = 'S',
       read_units = config.LPCM_PROVISIONED_THROUGHPUT['read_units'],
       write_units = config.LPCM_PROVISIONED_THROUGHPUT['write_units'],
       )
     if table:
-      logging.info("Sucessfully created table {}.".format(table_name))
+      logging.info("Successfully created table {}.".format(table_name))
     else:
       logging.error("Unable to create table {}.".format(table_name))

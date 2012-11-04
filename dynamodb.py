@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Yavar Naddaf http://www.empiricalresults.ca/
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
+from collections import namedtuple
 import boto
 from thread_local import lpcm_thread_local
 import config
@@ -32,6 +33,17 @@ class DynamoDB(object):
     return lpcm_thread_local.ddb_table_cache[table_name]
 
   @classmethod
+  def get_item(cls, cmp_key):
+    "Tries to get an item from DynamoDB. Throws DynamoDBKeyNotFoundError"
+    table = cls.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    return table.get_item(hash_key = cmp_key.hash_key, range_key = cmp_key.range_key)
+
+  @classmethod
+  def create_item(cls, cmp_key):
+    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    return table.new_item(hash_key = cmp_key.hash_key, range_key = cmp_key.range_key)
+
+  @classmethod
   def create_table(cls, table_name, hash_key_name, hash_key_proto_value,
       range_key_name, range_key_proto_value, read_units, write_units):
     """ Creates a table in dynamo db.
@@ -50,6 +62,15 @@ class DynamoDB(object):
           read_units = read_units,
           write_units = write_units)
     return table
+
+  @classmethod
+  def query(cls, cmp_key, attributes_to_get = None, request_limit = None,
+            max_results = None, consistent_read = False):
+    table = DynamoDB.get_table(config.LPCM_DYNAMODB_TABLE_NAME)
+    return table.query(hash_key = cmp_key.hash_key, range_key_condition = None,
+      attributes_to_get = attributes_to_get, request_limit = request_limit,
+      max_results = max_results, consistent_read = consistent_read)
+
 
   class TableNotFound(KeyError):
     pass

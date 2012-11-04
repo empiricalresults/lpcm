@@ -12,11 +12,11 @@ def LPCM(name, cache_only = False, cache_timeout = None):
 
 def LPCMSet(name, cache_only = False, cache_timeout = None):
   if cache_only or force_cache_only():
-    from lpcm_set import LargePersistentCachedMapForSets
-    return LargePersistentCachedMapForSets(name, cache_timeout)
-  else:
     from lpcm_set import LargeCachedMapForSets
     return LargeCachedMapForSets(name, cache_timeout)
+  else:
+    from lpcm_set import LargePersistentCachedMapForSets
+    return LargePersistentCachedMapForSets(name, cache_timeout)
 
 def force_cache_only():
   if is_in_test():

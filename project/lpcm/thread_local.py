@@ -11,4 +11,8 @@ def is_in_test():
   return lpcm_thread_local.is_in_test
 
 def set_in_test():
-  lpcm_thread_local.is_in_test = True
+  in_test =  getattr(lpcm_thread_local, 'is_in_test', False)
+  if not in_test:
+    lpcm_thread_local.is_in_test = True
+    from cleanup  import LPCMCleanUp
+    LPCMCleanUp.bind()

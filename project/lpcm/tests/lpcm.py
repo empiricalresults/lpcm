@@ -29,30 +29,22 @@ class TestLPCM(LPCMTestCase):
     another_map_lpm = another_map.lpm
     some_map.lpm = MockLPM()
     another_map.lpm = MockLPM()
-    try:
-      self.assertEquals(some_map["a"], 123)
-      self.assertEquals(some_map["b"], "some string")
-      self.assertEquals(some_map["c"], 7.890)
-      self.assertEquals(another_map["a"], 234)
-      self.assertEquals(another_map["b"], "another string")
-      self.assertEquals(another_map["c"], 8.901)
-      # Make sure we can read from DB Backend
-      some_map.lpm = some_map_lpm
-      another_map.lpm = another_map_lpm
-      cache.clear()
-      self.assertEquals(some_map["a"], 123)
-      self.assertEquals(some_map["b"], "some string")
-      self.assertEquals(some_map["c"], 7.890)
-      self.assertEquals(another_map["a"], 234)
-      self.assertEquals(another_map["b"], "another string")
-      self.assertEquals(another_map["c"], 8.901)
-    finally:
-      some_map.delete("a")
-      some_map.delete("b")
-      some_map.delete("c")
-      another_map.delete("a")
-      another_map.delete("b")
-      another_map.delete("c")
+    self.assertEquals(some_map["a"], 123)
+    self.assertEquals(some_map["b"], "some string")
+    self.assertEquals(some_map["c"], 7.890)
+    self.assertEquals(another_map["a"], 234)
+    self.assertEquals(another_map["b"], "another string")
+    self.assertEquals(another_map["c"], 8.901)
+    # Make sure we can read from DB Backend
+    some_map.lpm = some_map_lpm
+    another_map.lpm = another_map_lpm
+    cache.clear()
+    self.assertEquals(some_map["a"], 123)
+    self.assertEquals(some_map["b"], "some string")
+    self.assertEquals(some_map["c"], 7.890)
+    self.assertEquals(another_map["a"], 234)
+    self.assertEquals(another_map["b"], "another string")
+    self.assertEquals(another_map["c"], 8.901)
 
   def test_contains(self):
     some_map = LPCM(name = "some_map")
@@ -85,81 +77,57 @@ class TestLPCM(LPCMTestCase):
 
   def test_increment(self):
     some_map = LPCM(name = "some_map")
-    try:
-      some_map['a'] = 41
-      some_map.increment('a')
-      self.assertEquals(some_map['a'], 42)
-      some_map.increment('a', 4.2)
-      self.assertEquals(some_map['a'], 46.2)
-    finally:
-      some_map.delete('a')
+    some_map['a'] = 41
+    some_map.increment('a')
+    self.assertEquals(some_map['a'], 42)
+    some_map.increment('a', 4.2)
+    self.assertEquals(some_map['a'], 46.2)
 
   def test_increment_non_existent(self):
     some_map = LPCM(name = "some_map")
-    try:
-      some_map.increment('new_key')
-      self.assertEquals(some_map['new_key'], 1)
-      some_map.increment('another_key', 10)
-      self.assertEquals(some_map['another_key'], 10)
-    finally:
-      some_map.delete('new_key')
-      some_map.delete('another_key')
+    some_map.increment('new_key')
+    self.assertEquals(some_map['new_key'], 1)
+    some_map.increment('another_key', 10)
+    self.assertEquals(some_map['another_key'], 10)
 
   def test_bad_increment(self):
     some_map = LPCM(name = "some_map")
-    try:
-      with self.assertRaises(ValueError):
-        some_map.increment('new_key', 'bcde')
-    finally:
-      some_map.delete('new_key')
+    with self.assertRaises(ValueError):
+      some_map.increment('new_key', 'bcde')
+    some_map.delete('new_key')
 
   def test_decrement(self):
     some_map = LPCM(name = "some_map")
-    try:
-      some_map['a'] = 43
-      some_map.decrement('a')
-      self.assertEquals(some_map['a'], 42)
-      some_map.decrement('a', 1.9)
-      self.assertEquals(some_map['a'], 40.1)
-      some_map.decrement('a', 50.1)
-      self.assertEquals(some_map['a'], -10)
-    finally:
-      some_map.delete('a')
+    some_map['a'] = 43
+    some_map.decrement('a')
+    self.assertEquals(some_map['a'], 42)
+    some_map.decrement('a', 1.9)
+    self.assertEquals(some_map['a'], 40.1)
+    some_map.decrement('a', 50.1)
+    self.assertEquals(some_map['a'], -10)
 
   def test_disable_caching(self):
     some_map = LPCM(name = "some_map")
     from ..lcm import LargeCachedMap
     cache_only_map = LargeCachedMap(name = "some_map")
-    try:
-      some_map["a"] = 123
-      cache_only_map.increment('a')
-      self.assertEquals(some_map['a'], 124)  # reads from the incremented cash
-      some_map.disable_caching()
-      self.assertEquals(some_map['a'], 123)  # reads from the untouched dynamodb
-    finally:
-      some_map.delete("a")
+    some_map["a"] = 123
+    cache_only_map.increment('a')
+    self.assertEquals(some_map['a'], 124)  # reads from the incremented cash
+    some_map.disable_caching()
+    self.assertEquals(some_map['a'], 123)  # reads from the untouched dynamodb
 
   def test_keys(self):
     some_map = LPCM(name = "some_map")
     another_map = LPCM(name = "another_map")
     unicode_key = 'Ivan Krsti\xc4\x87'.decode('utf8')
     self.assertEquals(some_map.keys(), [])
-    try:
-      some_map["a"] = 123
-      some_map["b"] = "some string"
-      some_map["c"] = 7.890
-      another_map['a'] = 234
-      another_map['d'] = 345
-      another_map['e'] = 456
-      some_map[unicode_key] = u"you are always a pain unicode"
-      self.assertEquals(set(some_map.keys()), {'a', 'b', 'c', unicode_key})
-      another_map.delete('e')
-      self.assertEquals(set(another_map.keys()), {'a', 'd'})
-    finally:
-      some_map.delete("a")
-      some_map.delete("b")
-      some_map.delete("c")
-      some_map.delete(unicode_key)
-      another_map.delete("a")
-      another_map.delete("d")
-      another_map.delete("e")
+    some_map["a"] = 123
+    some_map["b"] = "some string"
+    some_map["c"] = 7.890
+    another_map['a'] = 234
+    another_map['d'] = 345
+    another_map['e'] = 456
+    some_map[unicode_key] = u"you are always a pain unicode"
+    self.assertEquals(set(some_map.keys()), {'a', 'b', 'c', unicode_key})
+    another_map.delete('e')
+    self.assertEquals(set(another_map.keys()), {'a', 'd'})

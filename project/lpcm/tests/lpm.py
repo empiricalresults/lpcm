@@ -2,6 +2,7 @@
 # Released Under GNU General Public License. www.gnu.org/licenses/gpl-3.0.txt
 
 import unittest
+from boto.exception import DynamoDBResponseError
 from django.core.cache import cache
 from base import LPCMTestCase
 from ..lpm import LargePersistentMap as LPM
@@ -94,7 +95,7 @@ class TestLPM(LPCMTestCase):
   def test_bad_increment_regular(self):
     some_map = LPM(name = "some_map")
     try:
-      with self.assertRaises(ValueError):
+      with self.assertRaises(DynamoDBResponseError):
         some_map.atomic_add_value('new_key', 'bcde')
     finally:
       some_map.delete('new_key')

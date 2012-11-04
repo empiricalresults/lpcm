@@ -68,5 +68,4 @@ def on_lcm_update(sender, **kwargs):
     LCMKeys.add_key(map_name, key)
   elif action == 'delete':
     LCMKeys.remove_key(map_name, key)
-  map_name = kwargs['map_name']
-  key = kwargs['key']
+

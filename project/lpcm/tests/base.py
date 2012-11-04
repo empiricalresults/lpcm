@@ -8,3 +8,8 @@ class LPCMTestCase(TestCase):
   def __init__(self, *args, **kwargs):
     super(LPCMTestCase, self).__init__(*args, **kwargs)
     set_in_test()
+
+  def _fixture_teardown(self):
+    super(LPCMTestCase, self)._fixture_teardown()
+    from ..cleanup import LPCMCleanUp
+    LPCMCleanUp.full_clean_up()

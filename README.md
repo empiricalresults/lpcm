@@ -35,6 +35,14 @@ Atomic increments are also supported:
   user_count.increment(request.user.id)
 ```
 
+as are key iterators:
+
+```python
+  user_count = LPCM('user_count')
+  for user_id in user_count:
+    do_stuff(user_id)
+```
+
 In addition to the syntactic sugar, *lpcm* allows you insulate your production data
 from the data accessed by unittests and general development.  It also allows you to get
 faster and cheaper testing by switching to cached-only testing during development.
